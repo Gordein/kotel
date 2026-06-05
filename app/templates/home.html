@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <header class="topbar">
-  <strong class="brand">Котёл</strong>
+  <strong class="brand">Orlowicza</strong>
   <span class="who">{{ current_user.name }}
     <form method="post" action="{{ url_for('auth.do_logout') }}" class="inline">
       <button class="textlink" onclick="return confirm('Выйти?')">выйти</button>

@@ -77,10 +77,6 @@ a.chip { text-decoration: none; }
 .monthnav a { text-decoration: none; font-size: 20px; line-height: 1; }
 .monthnav .dim { color: var(--line); font-size: 20px; line-height: 1; }
 .monthnav .ml { color: var(--text); font-weight: 600; font-size: 14px; }
-.shares { margin-top: 8px; }
-.share-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 8px; }
-.share-row span { color: var(--text); }
-.share-row input { width: 120px; margin: 0; padding: 9px 11px; }
 
 /* balances */
 .balances .lbl { margin-top: 0; }

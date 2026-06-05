@@ -199,26 +199,6 @@ def test_comma_amount_accepted(client, app):
         assert SessionLocal().query(Expense).filter_by(request_id="c-1").first().amount == Decimal("20.50")
 
 
-def test_custom_split_unequal_shares(client, app):
-    ids = _login(client, app)  # Сэм платит
-    client.post("/expense", data={"split_mode": "custom", "category": "Продукты",
-        "spent_on": "2026-06-05", "request_id": "cs-1",
-        "cpid": [ids["Сэм"], ids["Люда"], ids["Микита"]], "camount": ["15", "15", "30"]})
-    from decimal import Decimal
-    from app.db import SessionLocal
-    from app.ledger import load_ledger
-    from app.models import Expense, ExpenseShare
-    with app.app_context():
-        s = SessionLocal()
-        e = s.query(Expense).filter_by(request_id="cs-1").first()
-        assert e.amount == Decimal("60.00")  # total = sum of shares
-        shares = {sh.person_id: sh.amount for sh in s.query(ExpenseShare).filter_by(expense_id=e.id)}
-        assert shares[ids["Микита"]] == Decimal("30.00")
-        _people, pw = load_ledger(s)
-        assert pw[(ids["Микита"], ids["Сэм"])] == Decimal("30.00")  # Mikita owes Sam 30
-        assert pw[(ids["Люда"], ids["Сэм"])] == Decimal("15.00")
-
-
 def test_pwa_assets_served(client):
     for path in ("/static/manifest.webmanifest", "/static/sw.js",
                  "/static/styles.css", "/static/app.js",
