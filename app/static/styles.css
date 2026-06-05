@@ -72,7 +72,15 @@ textarea { resize: vertical; }
   color: var(--muted); cursor: pointer; font-size: 14px; width: auto; }
 .chip.on { background: var(--accent-soft); border-color: var(--accent); color: var(--text); }
 a.chip { text-decoration: none; }
-.filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 2px 2px; }
+.controls { margin: 16px 0 2px; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; }
+.controls-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 12px; }
+.monthnav { display: flex; align-items: center; gap: 10px; }
+.monthnav a { text-decoration: none; font-size: 20px; line-height: 1; }
+.monthnav .dim { color: var(--line); font-size: 20px; line-height: 1; }
+.monthnav .ml { color: var(--text); font-weight: 600; font-size: 14px; min-width: 96px; text-align: center; }
+.search { width: auto; }
+.search input { margin: 0; padding: 8px 11px; width: 140px; }
 
 /* balances */
 .balances .lbl { margin-top: 0; }

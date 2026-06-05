@@ -184,6 +184,31 @@ def test_person_filter(client, app):
     assert "sambuy" in client.get(f"/?person={ids['Сэм']}").get_data(as_text=True)
 
 
+def test_search_filters_feed(client, app):
+    ids = _login(client, app)
+    client.post("/expense", data={"amount": "10", "title": "feedmilk", "category": "Продукты",
+        "participant": [ids["Сэм"]], "spent_on": "2026-06-05", "request_id": "s-1"})
+    client.post("/expense", data={"amount": "20", "title": "feedbread", "category": "Продукты",
+        "participant": [ids["Сэм"]], "spent_on": "2026-06-05", "request_id": "s-2"})
+    page = client.get("/?q=feedmilk").get_data(as_text=True)
+    assert "feedmilk" in page and "feedbread" not in page
+
+
+def test_month_default_and_nav(client, app):
+    from datetime import date, timedelta
+    ids = _login(client, app)
+    today = date.today()
+    prev = today.replace(day=1) - timedelta(days=1)
+    client.post("/expense", data={"amount": "10", "title": "feedcur", "category": "Другое",
+        "participant": [ids["Сэм"]], "spent_on": today.isoformat(), "request_id": "m-1"})
+    client.post("/expense", data={"amount": "10", "title": "feedold", "category": "Другое",
+        "participant": [ids["Сэм"]], "spent_on": prev.isoformat(), "request_id": "m-2"})
+    home = client.get("/").get_data(as_text=True)
+    assert "feedcur" in home and "feedold" not in home  # default = current month only
+    old = client.get(f"/?month={prev.year}-{prev.month:02d}").get_data(as_text=True)
+    assert "feedold" in old and "feedcur" not in old
+
+
 def test_empty_amount_returns_422_not_500(client, app):
     ids = _login(client, app)
     r = client.post("/expense", data={"amount": "", "participant": [ids["Сэм"]],

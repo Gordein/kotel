@@ -31,9 +31,11 @@ def test_rent_pairwise():
     e = [{"payers": {"luda": D("2600"), "mikita": D("2600")},
           "shares": {"sam": D("1900"), "luda": D("1900"), "mikita": D("1400")}}]
     pw = compute_pairwise(e, [])
-    assert pw[("sam", "luda")] == D("950.00")     # Sam's 1900 split across the two payers
-    assert pw[("sam", "mikita")] == D("950.00")
-    assert pw[("luda", "mikita")] == D("250.00")  # net between the two payers
+    # Sam reimburses each payer their exact overpayment; no Luda<->Mikita debt
+    assert pw[("sam", "luda")] == D("700.00")
+    assert pw[("sam", "mikita")] == D("1200.00")
+    assert ("luda", "mikita") not in pw
+    assert ("mikita", "luda") not in pw
 
 
 def test_debts_for_perspective():
