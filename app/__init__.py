@@ -20,4 +20,7 @@ def create_app(config_object=Config):
     def healthz():
         return {"status": "ok"}
 
+    from .cli import init_db
+    app.cli.add_command(init_db)
+
     return app
