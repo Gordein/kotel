@@ -2,37 +2,33 @@
 {% block content %}
 <div class="row">
   <h1>Баланс</h1>
-  <form method="post" action="{{ url_for('auth.do_logout') }}" style="width:auto">
-    <button class="chip">{{ current_user.name }} ⎋</button>
-  </form>
+  <span class="muted">{{ current_user.name }}</span>
 </div>
 
-{% if not invariant_ok %}<p class="warn">⚠ Баланс не сходится к нулю — сообщи разработчику.</p>{% endif %}
+{% if not invariant_ok %}<p class="warn">Баланс не сходится к нулю — сообщи разработчику.</p>{% endif %}
 
 <div class="card">
   <p class="muted">Ты должен</p>
   {% if owe %}{% for t in owe %}
     <div class="row"><span>{{ people[t['to']].name }}</span><span class="amount">{{ '%.2f'|format(t['amount']) }} zł</span></div>
-  {% endfor %}{% else %}<p>—</p>{% endif %}
-  <p class="muted" style="margin-top:12px">Тебе должны</p>
+  {% endfor %}{% else %}<p>Никому</p>{% endif %}
+
+  <p class="muted" style="margin-top:14px">Тебе должны</p>
   {% if owed %}{% for t in owed %}
     <div class="row"><span>{{ people[t['from']].name }}</span><span class="amount">{{ '%.2f'|format(t['amount']) }} zł</span></div>
-  {% endfor %}{% else %}<p>—</p>{% endif %}
+  {% endfor %}{% else %}<p>Никто</p>{% endif %}
 </div>
 
+{% if my_edges %}
 <details class="card">
-  <summary>△ Показать граф</summary>
+  <summary>Показать граф</summary>
   {% include "partials/graph.html" %}
 </details>
+{% endif %}
 
-<div class="card">
-  <p class="muted">Чтобы всё закрыть</p>
-  {% for t in transfers %}
-  <div class="row"><span>{{ people[t['from']].name }} → {{ people[t['to']].name }}</span>
-    <span class="amount">{{ '%.2f'|format(t['amount']) }} zł</span></div>
-  {% endfor %}
-  {% if not transfers %}<p>Все в расчёте 🎉</p>{% endif %}
-</div>
-
+{% if owe %}
 <a class="btn" href="{{ url_for('settlement.new') }}">Закрыть долг</a>
+{% else %}
+<button class="btn" disabled style="opacity:.45;cursor:default">Долгов нет</button>
+{% endif %}
 {% endblock %}

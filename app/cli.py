@@ -16,16 +16,16 @@ def init_db():
     s = SessionLocal()
     if s.query(Person).count() == 0:
         s.add_all([
-            Person(name="Сэм", color="#d97757", pin_hash=set_pin("0000")),
-            Person(name="Люда", color="#6a9bcc", pin_hash=set_pin("0000")),
-            Person(name="Микита", color="#7faa6e", pin_hash=set_pin("0000")),
+            Person(name="Сэм", color="#d97757", pin_hash=set_pin("111")),
+            Person(name="Люда", color="#6a9bcc", pin_hash=set_pin("222")),
+            Person(name="Микита", color="#7faa6e", pin_hash=set_pin("333")),
         ])
     if s.query(Template).count() == 0:
         s.add(Template(
-            title="Аренда", category="Квартира (аренда)",
+            title="Аренда", category="Квартира",
             default_payers=json.dumps({"Люда": "2600", "Микита": "2600"}),
             default_shares=json.dumps({"Сэм": "1900", "Люда": "1900", "Микита": "1400"}),
-            note="Люда → Михал: Najem 1900, Opłaty 700\nМикита → Михал: Najem 1900, Opłaty 700",
+            note="Luda -> Mihal: Najem 1900, Oplaty 700; Mikita -> Mihal: Najem 1900, Oplaty 700",
         ))
     s.commit()
-    click.echo("DB initialised. Default PIN for everyone: 0000 (change it on the Profile screen).")
+    click.echo("DB ready. PINs -> Sam:111  Luda:222  Mikita:333  (change on the Profile screen).")

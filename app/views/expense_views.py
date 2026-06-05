@@ -12,7 +12,7 @@ from ..templates_svc import instantiate_template
 
 bp = Blueprint("expense", __name__)
 
-CATEGORIES = ["Квартира (аренда)", "Коммуналка", "Продукты", "Хозтовары", "Кафе/досуг", "Другое"]
+CATEGORIES = ["Квартира", "Продукты", "Хозтовары", "Связь", "Другое"]
 
 
 @bp.get("/expense/new")

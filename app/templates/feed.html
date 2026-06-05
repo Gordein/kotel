@@ -12,14 +12,14 @@
     <span class="amount">{{ '%.2f'|format(it['amount']) }} zł</span>
   </div>
   <div class="row">
-    <span class="pill">{% if it['kind'] == 'expense' %}{{ it['category'] }}{% else %}{{ 'нал' if it['method'] == 'cash' else 'перевод' }}{% endif %}</span>
+    <span class="pill">{% if it['kind'] == 'expense' %}{{ it['category'] }}{% else %}{{ 'наличкой' if it['method'] == 'cash' else 'переводом' }}{% endif %}</span>
     <button type="button" class="chip"
             hx-get="{{ url_for('feed.comments', target_type=it['kind'], target_id=it['id']) }}"
-            hx-target="#c-{{ it['kind'] }}-{{ it['id'] }}" hx-swap="innerHTML">💬 {{ it['comment_count'] }}</button>
+            hx-target="#c-{{ it['kind'] }}-{{ it['id'] }}" hx-swap="innerHTML">Коммент.{% if it['comment_count'] %} {{ it['comment_count'] }}{% endif %}</button>
   </div>
   <div id="c-{{ it['kind'] }}-{{ it['id'] }}" class="collapse"></div>
 </div>
 {% else %}
-<p class="muted">Пока пусто. Добавь первую трату через ＋.</p>
+<p class="muted">Пока пусто. Добавь первую трату через «+».</p>
 {% endfor %}
 {% endblock %}

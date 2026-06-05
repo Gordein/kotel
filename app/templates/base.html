@@ -23,7 +23,7 @@
   <nav class="tabbar">
     <a href="{{ url_for('balance.index') }}" class="{{ 'active' if active=='balance' }}">Баланс</a>
     <a href="{{ url_for('feed.index') }}" class="{{ 'active' if active=='feed' }}">Лента</a>
-    <a href="{{ url_for('expense.new') }}" class="add">＋</a>
+    <a href="{{ url_for('expense.new') }}" class="add">+</a>
     <a href="{{ url_for('profile.index') }}" class="{{ 'active' if active=='profile' }}">Профиль</a>
   </nav>
   <script>window.KOTEL_USER = "{{ current_user.name }}";</script>

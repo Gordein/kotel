@@ -1,24 +1,14 @@
 {% extends "base.html" %}
 {% block content %}
 <h1>Профиль — {{ current_user.name }}</h1>
-<form method="post" action="{{ url_for('profile.change_pin') }}" class="card">
-  <label>Сменить свой PIN<input name="pin" inputmode="numeric" maxlength="8" required></label>
+
+<form method="post" action="{{ url_for('profile.update_pin') }}" class="card">
+  <label>Сменить PIN<input name="pin" type="password" inputmode="numeric" maxlength="8" required></label>
+  {% if msg %}<p class="muted" style="margin-top:8px">{{ msg }}</p>{% endif %}
   <button class="btn" style="margin-top:12px">Сохранить</button>
 </form>
-<div class="card">
-  <p class="muted">Соседи (можно сбросить PIN, если кто-то забыл)</p>
-  {% for p in people if p.id != current_user.id %}
-  <form method="post" action="{{ url_for('profile.reset_other', person_id=p.id) }}"
-        class="row" style="margin-top:8px">
-    <span>{{ p.name }}</span>
-    <span style="display:flex;gap:6px;width:auto">
-      <input name="pin" placeholder="новый PIN" style="width:120px">
-      <button class="chip">Сбросить</button>
-    </span>
-  </form>
-  {% endfor %}
-</div>
-<form method="post" action="{{ url_for('auth.do_logout') }}" style="margin-top:12px">
+
+<form method="post" action="{{ url_for('auth.do_logout') }}">
   <button class="btn btn-ghost">Выйти</button>
 </form>
 {% endblock %}

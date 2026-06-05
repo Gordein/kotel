@@ -5,7 +5,7 @@ from flask import Blueprint, redirect, render_template, request, url_for
 from ..auth import current_user, require_login
 from ..db import SessionLocal
 from ..errors import ValidationError
-from ..models import Person
+from ..ledger import load_ledger
 from ..money import parse_amount
 from ..settlements import create_settlement
 
@@ -15,9 +15,14 @@ bp = Blueprint("settlement", __name__)
 @bp.get("/settle")
 @require_login
 def new():
-    people = SessionLocal().query(Person).order_by(Person.id).all()
-    return render_template("settle_form.html", people=people, active="balance",
-                           today=date.today().isoformat())
+    s = SessionLocal()
+    me = current_user()
+    people, _net, transfers = load_ledger(s)
+    # you can only settle a debt you actually owe
+    creditors = [{"id": t["to"], "name": people[t["to"]].name, "amount": f'{t["amount"]:.2f}'}
+                 for t in transfers if t["from"] == me.id]
+    return render_template("settle_form.html", creditors=creditors,
+                           active="balance", today=date.today().isoformat())
 
 
 @bp.post("/settle")

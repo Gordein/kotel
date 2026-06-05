@@ -1,3 +1,6 @@
+PINS = {"Сэм": "111", "Люда": "222", "Микита": "333"}
+
+
 def test_healthz(client):
     resp = client.get("/healthz")
     assert resp.status_code == 200
@@ -11,7 +14,7 @@ def _seed_people(app):
     with app.app_context():
         s = SessionLocal()
         if s.query(Person).count() == 0:
-            s.add_all([Person(name=n, color="#888", pin_hash=set_pin("1234"))
+            s.add_all([Person(name=n, color="#888", pin_hash=set_pin(PINS[n]))
                        for n in ("Сэм", "Люда", "Микита")])
             s.commit()
         return {p.name: p.id for p in s.query(Person).order_by(Person.id).all()}
@@ -19,23 +22,27 @@ def _seed_people(app):
 
 def _login(client, app, name="Сэм"):
     ids = _seed_people(app)
-    client.post("/login", data={"person_id": ids[name], "pin": "1234"})
+    client.post("/login", data={"pin": PINS[name]})
     return ids
 
 
 def test_login_page_renders(client, app):
-    _seed_people(app)
     assert client.get("/login").status_code == 200
 
 
-def test_login_redirects(client, app):
-    ids = _seed_people(app)
-    resp = client.post("/login", data={"person_id": ids["Сэм"], "pin": "1234"})
+def test_login_by_pin_redirects(client, app):
+    _seed_people(app)
+    resp = client.post("/login", data={"pin": "111"})
     assert resp.status_code == 302
 
 
+def test_login_wrong_pin(client, app):
+    _seed_people(app)
+    resp = client.post("/login", data={"pin": "000"})
+    assert resp.status_code == 401
+
+
 def test_requires_login(client, app):
-    # Not logged in -> protected pages redirect to /login
     resp = client.get("/")
     assert resp.status_code == 302
     assert "/login" in resp.headers["Location"]
@@ -62,16 +69,23 @@ def test_create_expense_via_form(client, app):
 
 def test_balance_and_settlement(client, app):
     ids = _login(client, app)
-    # Lyuda pays 700 for Sam only
+    # Lyuda pays 700 for Sam only -> Sam owes Lyuda 700
     client.post("/expense", data={"amount": "700", "title": "X", "category": "Другое",
         "payer_id": ids["Люда"], "participant": [ids["Сэм"]], "spent_on": "2026-06-05",
         "request_id": "b-1"})
     assert client.get("/").status_code == 200
-    # Sam settles 700 to Lyuda
+    assert client.get("/settle").status_code == 200  # Sam owes -> creditors non-empty
     r = client.post("/settle", data={"to_person": ids["Люда"], "amount": "700",
         "method": "cash", "settled_on": "2026-06-05", "request_id": "set-1"})
     assert r.status_code in (302, 200)
     assert client.get("/").status_code == 200
+
+
+def test_settle_screen_when_nothing_owed(client, app):
+    _login(client, app)  # Sam owes nobody
+    page = client.get("/settle")
+    assert page.status_code == 200
+    assert "никому не должен" in page.get_data(as_text=True)
 
 
 def test_feed_loads(client, app):
@@ -86,7 +100,7 @@ def test_from_template_creates_rent(client, app):
     from app.models import Expense, Template
     with app.app_context():
         s = SessionLocal()
-        s.add(Template(title="Аренда", category="Квартира (аренда)",
+        s.add(Template(title="Аренда", category="Квартира",
                        default_payers=json.dumps({"Люда": "2600", "Микита": "2600"}),
                        default_shares=json.dumps({"Сэм": "1900", "Люда": "1900", "Микита": "1400"}),
                        note="x"))
@@ -119,4 +133,3 @@ def test_pwa_assets_served(client):
                  "/static/styles.css", "/static/app.js",
                  "/static/icon-192.png", "/static/icon-512.png"):
         assert client.get(path).status_code == 200, path
-

@@ -1,41 +1,53 @@
-from app.auth import current_user, login, reset_pin, set_pin, verify_pin
+import pytest
+
+from app.auth import change_pin, current_user, login, set_pin, verify_pin
 from app.db import SessionLocal
+from app.errors import ValidationError
 from app.models import Person
 
 
-def _seed(app):
+def _seed(app, pins=(("Сэм", "111"), ("Люда", "222"))):
     with app.app_context():
         s = SessionLocal()
-        sam = Person(name="Сэм", color="#d97757", pin_hash=set_pin("1234"))
-        s.add(sam)
+        for name, pin in pins:
+            s.add(Person(name=name, color="#888", pin_hash=set_pin(pin)))
         s.commit()
-        return sam.id
+        return {p.name: p.id for p in s.query(Person).all()}
 
 
 def test_set_and_verify_pin(app):
-    h = set_pin("1234")
-    assert verify_pin(h, "1234")
-    assert not verify_pin(h, "0000")
+    h = set_pin("111")
+    assert verify_pin(h, "111")
+    assert not verify_pin(h, "000")
 
 
-def test_login_sets_session(app):
-    pid = _seed(app)
+def test_login_by_pin_alone(app):
+    ids = _seed(app)
     with app.test_request_context():
         from flask import session
-        assert login(pid, "1234") is True
-        assert session["person_id"] == pid
-        assert current_user().id == pid
+        person = login("222")
+        assert person is not None and person.name == "Люда"
+        assert session["person_id"] == ids["Люда"]
+        assert current_user().id == ids["Люда"]
 
 
 def test_login_wrong_pin(app):
-    pid = _seed(app)
+    _seed(app)
     with app.test_request_context():
-        assert login(pid, "9999") is False
+        assert login("999") is None
+        assert login("") is None
 
 
-def test_reset_pin(app):
-    pid = _seed(app)
+def test_change_pin(app):
+    ids = _seed(app)
     with app.app_context():
-        reset_pin(pid, "5678")
+        change_pin(ids["Сэм"], "555")
         s = SessionLocal()
-        assert verify_pin(s.get(Person, pid).pin_hash, "5678")
+        assert verify_pin(s.get(Person, ids["Сэм"]).pin_hash, "555")
+
+
+def test_change_pin_rejects_duplicate(app):
+    ids = _seed(app)
+    with app.app_context():
+        with pytest.raises(ValidationError):
+            change_pin(ids["Сэм"], "222")  # already Luda's PIN
