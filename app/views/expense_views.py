@@ -1,6 +1,7 @@
+import uuid
 from datetime import date
 
-from flask import Blueprint, redirect, render_template, request, url_for
+from flask import Blueprint, make_response, redirect, render_template, request, url_for
 
 from ..auth import current_user, require_login
 from ..db import SessionLocal
@@ -13,6 +14,15 @@ from ..templates_svc import instantiate_template
 bp = Blueprint("expense", __name__)
 
 
+def _ok(target):
+    """Success response: HTMX navigates via HX-Redirect, plain POST falls back to a redirect."""
+    if request.headers.get("HX-Request"):
+        resp = make_response("", 204)
+        resp.headers["HX-Redirect"] = target
+        return resp
+    return redirect(target)
+
+
 @bp.post("/expense")
 @require_login
 def create():
@@ -20,7 +30,7 @@ def create():
     me = current_user()
     form = request.form
     try:
-        amount = parse_amount(form["amount"])
+        amount = parse_amount(form.get("amount", ""))
         participants = [int(x) for x in form.getlist("participant")]
         if not participants:
             raise ValidationError("Выбери, на кого делить")
@@ -30,11 +40,11 @@ def create():
         create_expense(s, created_by=me.id, title=(form.get("title") or "").strip() or "Без названия",
                        category=form.get("category", "Другое"),
                        spent_on=date.fromisoformat(form.get("spent_on") or date.today().isoformat()),
-                       payers={me.id: amount}, shares=shares,
-                       note=(form.get("note") or "").strip(), request_id=form["request_id"])
+                       payers={me.id: amount}, shares=shares, note=(form.get("note") or "").strip(),
+                       request_id=form.get("request_id") or uuid.uuid4().hex)
     except (ValidationError, ValueError) as e:
         return render_template("partials/form_error.html", error=str(e)), 422
-    return redirect(url_for("balance.index"))
+    return _ok(url_for("balance.index"))
 
 
 @bp.post("/expense/from-template/<int:template_id>")
@@ -46,7 +56,7 @@ def from_template(template_id):
         instantiate_template(s, template_id=template_id, year=today.year, month=today.month,
                              by=current_user().id)
     except ValidationError:
-        pass  # already added this month — just return home, no scary page
+        pass  # already added this month — just return home
     return redirect(url_for("balance.index"))
 
 

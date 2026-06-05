@@ -6,6 +6,7 @@
 <p class="muted">Ты никому не должен.</p>
 {% else %}
 <form class="card" method="post" action="{{ url_for('settlement.create') }}" data-idempotent="1"
+      hx-post="{{ url_for('settlement.create') }}" hx-target="#form-error" hx-swap="innerHTML"
       x-data="{ to: {{ creditors[0].id }},
                 amounts: { {% for c in creditors %}{{ c.id }}: '{{ c.amount }}'{{ ',' if not loop.last }}{% endfor %} },
                 amount: '{{ creditors[0].amount }}', method: 'cash' }">

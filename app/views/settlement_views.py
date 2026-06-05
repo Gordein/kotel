@@ -1,6 +1,7 @@
+import uuid
 from datetime import date
 
-from flask import Blueprint, redirect, render_template, request, url_for
+from flask import Blueprint, make_response, redirect, render_template, request, url_for
 
 from ..auth import current_user, require_login
 from ..db import SessionLocal
@@ -11,6 +12,14 @@ from ..money import parse_amount
 from ..settlements import create_settlement, soft_delete_settlement
 
 bp = Blueprint("settlement", __name__)
+
+
+def _ok(target):
+    if request.headers.get("HX-Request"):
+        resp = make_response("", 204)
+        resp.headers["HX-Redirect"] = target
+        return resp
+    return redirect(target)
 
 
 @bp.get("/settle")
@@ -33,12 +42,12 @@ def create():
     form = request.form
     try:
         create_settlement(s, from_person=me.id, to_person=int(form["to_person"]),
-                          amount=parse_amount(form["amount"]), method=form.get("method", "cash"),
+                          amount=parse_amount(form.get("amount", "")), method=form.get("method", "cash"),
                           settled_on=date.fromisoformat(form.get("settled_on") or date.today().isoformat()),
-                          created_by=me.id, request_id=form["request_id"])
+                          created_by=me.id, request_id=form.get("request_id") or uuid.uuid4().hex)
     except (ValidationError, ValueError) as e:
         return render_template("partials/form_error.html", error=str(e)), 422
-    return redirect(url_for("balance.index"))
+    return _ok(url_for("balance.index"))
 
 
 @bp.post("/settle/<int:settlement_id>/delete")

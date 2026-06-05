@@ -29,3 +29,17 @@ def test_split_equal_clean():
 
 def test_format_amount():
     assert format_amount(Decimal("5.5")) == "5.50"
+
+
+def test_parse_rejects_empty_and_junk():
+    with pytest.raises(ValueError):
+        parse_amount("")
+    with pytest.raises(ValueError):
+        parse_amount("abc")
+    with pytest.raises(ValueError):
+        parse_amount("   ")
+
+
+def test_parse_accepts_comma():
+    assert parse_amount("20,50") == Decimal("20.50")
+    assert parse_amount(" 1 234,5 ") == Decimal("1234.50")

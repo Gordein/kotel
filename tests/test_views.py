@@ -146,6 +146,26 @@ def test_from_template_creates_rent_idempotently(client, app):
         assert SessionLocal().query(Expense).filter(Expense.amount == Decimal("5200")).count() == 1
 
 
+def test_empty_amount_returns_422_not_500(client, app):
+    ids = _login(client, app)
+    r = client.post("/expense", data={"amount": "", "participant": [ids["Сэм"]],
+        "spent_on": "2026-06-05", "request_id": "e-1"})
+    assert r.status_code == 422
+    assert "сумма" in r.get_data(as_text=True).lower()
+
+
+def test_comma_amount_accepted(client, app):
+    ids = _login(client, app)
+    r = client.post("/expense", data={"amount": "20,50", "title": "x", "category": "Другое",
+        "participant": [ids["Сэм"]], "spent_on": "2026-06-05", "request_id": "c-1"})
+    assert r.status_code in (302, 200, 204)
+    from decimal import Decimal
+    from app.db import SessionLocal
+    from app.models import Expense
+    with app.app_context():
+        assert SessionLocal().query(Expense).filter_by(request_id="c-1").first().amount == Decimal("20.50")
+
+
 def test_pwa_assets_served(client):
     for path in ("/static/manifest.webmanifest", "/static/sw.js",
                  "/static/styles.css", "/static/app.js",

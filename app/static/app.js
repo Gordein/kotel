@@ -1,4 +1,4 @@
-// Generate a per-form idempotency key so double-submits / retries don't duplicate.
+// Per-form idempotency key so double-submits / retries don't duplicate.
 document.addEventListener("htmx:configRequest", (e) => {
   const form = e.detail.elt.closest("form");
   if (form && form.dataset.idempotent && !form.dataset.reqid) {
@@ -8,10 +8,18 @@ document.addEventListener("htmx:configRequest", (e) => {
   if (form && form.dataset.reqid) e.detail.parameters["request_id"] = form.dataset.reqid;
 });
 
+// Allow validation responses (422) to swap their error fragment inline.
+document.addEventListener("htmx:beforeSwap", (e) => {
+  if (e.detail.xhr && e.detail.xhr.status === 422) {
+    e.detail.shouldSwap = true;
+    e.detail.isError = false;
+  }
+});
+
 // For plain (non-HTMX) form posts, inject a request_id hidden field on submit.
 document.addEventListener("submit", (e) => {
   const form = e.target;
-  if (form.dataset && form.dataset.idempotent && !form.querySelector('input[name=request_id]')) {
+  if (form.dataset && form.dataset.idempotent && !form.querySelector("input[name=request_id]")) {
     const id = (crypto.randomUUID && crypto.randomUUID()) ||
       String(Date.now()) + Math.random().toString(16).slice(2);
     const i = document.createElement("input");

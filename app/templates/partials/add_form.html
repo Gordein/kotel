@@ -1,4 +1,5 @@
 <form class="card add" method="post" action="{{ url_for('expense.create') }}" data-idempotent="1"
+      hx-post="{{ url_for('expense.create') }}" hx-target="#form-error" hx-swap="innerHTML"
       x-data="{ amount:'', cat:'Продукты', note:false,
                 participants:[{% for p in people_list %}{{ p.id }}{{ ',' if not loop.last }}{% endfor %}] }">
   <span class="lbl" style="margin-top:0">Ты заплатил</span>

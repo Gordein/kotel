@@ -1,12 +1,17 @@
-from decimal import ROUND_DOWN, ROUND_HALF_UP, Decimal
+from decimal import ROUND_DOWN, ROUND_HALF_UP, Decimal, InvalidOperation
 
 CENT = Decimal("0.01")
 
 
 def parse_amount(value) -> Decimal:
-    d = Decimal(str(value)).quantize(CENT, rounding=ROUND_HALF_UP)
+    """Parse a user-entered amount. Accepts comma or dot; rejects junk cleanly."""
+    raw = str(value).strip().replace(" ", "").replace(",", ".")
+    try:
+        d = Decimal(raw).quantize(CENT, rounding=ROUND_HALF_UP)
+    except (InvalidOperation, ValueError):
+        raise ValueError("Неверная сумма")
     if d <= 0:
-        raise ValueError("amount must be > 0")
+        raise ValueError("Сумма должна быть больше 0")
     return d
 
 
