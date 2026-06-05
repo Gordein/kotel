@@ -28,4 +28,4 @@ def init_db():
             note="Luda -> Mihal: Najem 1900, Oplaty 700; Mikita -> Mihal: Najem 1900, Oplaty 700",
         ))
     s.commit()
-    click.echo("DB ready. PINs -> Sam:111  Luda:222  Mikita:333  (change on the Profile screen).")
+    click.echo("DB ready. PINs -> Sam:111  Luda:222  Mikita:333")
