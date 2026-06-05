@@ -1,0 +1,44 @@
+{% for g in groups %}
+<div class="month">
+  <span class="month-label">{{ g['label'] }}</span>
+  {% if g['total'] %}<span class="month-total">потрачено {{ '%.0f'|format(g['total']) }} zł</span>{% endif %}
+</div>
+{% for it in g['items'] %}
+<div class="card item"{% if it['note'] %} x-data="{ open: false }"{% endif %}>
+  <div class="item-head">
+    <div class="item-main">
+      {% if it['when'] > new_after %}<span class="dot" title="новое"></span>{% endif %}
+      <span class="who-name">{{ people[it['actor_id']].name }}</span>
+      {% if it['kind'] == 'expense' %}
+        <span class="what">{{ it['title'] }}</span>
+      {% else %}
+        <span class="what">вернул долг · {{ people[it['to_id']].name }}</span>
+      {% endif %}
+    </div>
+    <span class="amount">{{ '%.2f'|format(it['amount']) }} zł</span>
+  </div>
+  <div class="item-foot">
+    <span class="meta">
+      {% if it['kind'] == 'expense' %}
+        <span class="pill">{{ it['category'] }}</span>
+      {% else %}
+        <span class="pill">{{ 'долг · наличкой' if it['method'] == 'cash' else 'долг · переводом' }}</span>
+      {% endif %}
+      <span class="time">{{ it['when']|dt }}</span>
+    </span>
+    <span class="actions">
+      {% if it['note'] %}<button type="button" class="textlink" @click="open = !open" x-text="open ? 'свернуть' : 'примечание'"></button>{% endif %}
+      {% if it['actor_id'] == current_user.id %}
+      <form method="post" class="inline" onsubmit="return confirm('Удалить запись?')"
+            action="{{ url_for('expense.delete', expense_id=it['id']) if it['kind'] == 'expense' else url_for('settlement.delete', settlement_id=it['id']) }}">
+        <button type="submit" class="textlink danger">удалить</button>
+      </form>
+      {% endif %}
+    </span>
+  </div>
+  {% if it['note'] %}<p class="note" x-show="open" x-cloak>{{ it['note'] }}</p>{% endif %}
+</div>
+{% endfor %}
+{% else %}
+<p class="empty">Пока пусто. Запиши первую трату сверху.</p>
+{% endfor %}

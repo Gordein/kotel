@@ -2,3 +2,4 @@ Flask>=3.0
 SQLAlchemy>=2.0.41
 pytest>=8.3
 waitress>=3.0
+tzdata>=2024.1

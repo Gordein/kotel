@@ -16,9 +16,9 @@ def init_db():
     s = SessionLocal()
     if s.query(Person).count() == 0:
         s.add_all([
-            Person(name="Сэм", color="#d97757", pin_hash=set_pin("111")),
-            Person(name="Люда", color="#6a9bcc", pin_hash=set_pin("222")),
-            Person(name="Микита", color="#7faa6e", pin_hash=set_pin("333")),
+            Person(name="Сэм", color="#b07a5e", pin_hash=set_pin("111")),
+            Person(name="Люда", color="#6f88a4", pin_hash=set_pin("222")),
+            Person(name="Микита", color="#7d9a72", pin_hash=set_pin("333")),
         ])
     if s.query(Template).count() == 0:
         s.add(Template(

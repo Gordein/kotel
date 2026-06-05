@@ -1,0 +1,21 @@
+{% if owe or owed %}
+<div class="card balances">
+  {% if owe %}
+  <div class="bal-block">
+    <span class="lbl">Ты должен</span>
+    {% for t in owe %}
+    <div class="row"><span>{{ people[t['to']].name }}</span><span class="amount neg">{{ '%.2f'|format(t['amount']) }} zł</span></div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% if owed %}
+  <div class="bal-block">
+    <span class="lbl">Тебе должны</span>
+    {% for t in owed %}
+    <div class="row"><span>{{ people[t['from']].name }}</span><span class="amount pos">{{ '%.2f'|format(t['amount']) }} zł</span></div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% if owe %}<a class="btn" href="{{ url_for('settlement.new') }}">Закрыть долг</a>{% endif %}
+</div>
+{% endif %}

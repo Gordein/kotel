@@ -6,8 +6,9 @@ from ..auth import current_user, require_login
 from ..db import SessionLocal
 from ..errors import ValidationError
 from ..ledger import load_ledger
+from ..models import Settlement
 from ..money import parse_amount
-from ..settlements import create_settlement
+from ..settlements import create_settlement, soft_delete_settlement
 
 bp = Blueprint("settlement", __name__)
 
@@ -18,11 +19,10 @@ def new():
     s = SessionLocal()
     me = current_user()
     people, _net, transfers = load_ledger(s)
-    # you can only settle a debt you actually owe
     creditors = [{"id": t["to"], "name": people[t["to"]].name, "amount": f'{t["amount"]:.2f}'}
                  for t in transfers if t["from"] == me.id]
     return render_template("settle_form.html", creditors=creditors,
-                           active="balance", today=date.today().isoformat())
+                           today=date.today().isoformat())
 
 
 @bp.post("/settle")
@@ -38,4 +38,14 @@ def create():
                           created_by=me.id, request_id=form["request_id"])
     except (ValidationError, ValueError) as e:
         return render_template("partials/form_error.html", error=str(e)), 422
+    return redirect(url_for("balance.index"))
+
+
+@bp.post("/settle/<int:settlement_id>/delete")
+@require_login
+def delete(settlement_id):
+    s = SessionLocal()
+    st = s.get(Settlement, settlement_id)
+    if st and st.created_by_id == current_user().id:
+        soft_delete_settlement(s, settlement_id, by=current_user().id)
     return redirect(url_for("balance.index"))

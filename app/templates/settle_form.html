@@ -1,32 +1,34 @@
 {% extends "base.html" %}
 {% block content %}
+<a class="back" href="{{ url_for('balance.index') }}">← назад</a>
 <h1>Закрыть долг</h1>
 {% if not creditors %}
 <p class="muted">Ты никому не должен.</p>
-<a class="btn btn-ghost" href="{{ url_for('balance.index') }}" style="margin-top:12px">Назад</a>
 {% else %}
-<form method="post" action="{{ url_for('settlement.create') }}" data-idempotent="1"
+<form class="card" method="post" action="{{ url_for('settlement.create') }}" data-idempotent="1"
       x-data="{ to: {{ creditors[0].id }},
                 amounts: { {% for c in creditors %}{{ c.id }}: '{{ c.amount }}'{{ ',' if not loop.last }}{% endfor %} },
                 amount: '{{ creditors[0].amount }}', method: 'cash' }">
-  <label>Кому</label>
+  <span class="lbl" style="margin-top:0">Кому</span>
   <div class="chips">
     {% for c in creditors %}
-    <button type="button" class="chip" :aria-pressed="to==={{ c.id }}"
-            @click="to={{ c.id }}; amount=amounts[{{ c.id }}]">{{ c.name }} · {{ c.amount }} zł</button>
+    <button type="button" class="chip" :class="{ on: to === {{ c.id }} }"
+            @click="to = {{ c.id }}; amount = amounts[{{ c.id }}]">{{ c.name }} · {{ c.amount }} zł</button>
     {% endfor %}
     <input type="hidden" name="to_person" :value="to">
   </div>
-  <label>Сумма, zł<input name="amount" x-model="amount" inputmode="decimal" required></label>
-  <label>Как</label>
+  <span class="lbl">Сумма, zł</span>
+  <input name="amount" x-model="amount" inputmode="decimal" autocomplete="off"
+         @input="amount = amount.replace(',', '.').replace(/[^0-9.]/g,'').replace(/(\..*)\./g,'$1')">
+  <span class="lbl">Как</span>
   <div class="chips">
-    <button type="button" class="chip" :aria-pressed="method==='cash'" @click="method='cash'">Наличкой</button>
-    <button type="button" class="chip" :aria-pressed="method==='transfer'" @click="method='transfer'">Переводом</button>
+    <button type="button" class="chip" :class="{ on: method === 'cash' }" @click="method = 'cash'">наличкой</button>
+    <button type="button" class="chip" :class="{ on: method === 'transfer' }" @click="method = 'transfer'">переводом</button>
     <input type="hidden" name="method" :value="method">
   </div>
   <input type="hidden" name="settled_on" value="{{ today }}">
   <div id="form-error"></div>
-  <button class="btn" style="margin-top:16px">Готово</button>
+  <button class="btn primary" type="submit" style="margin-top:16px">Готово</button>
 </form>
 {% endif %}
 {% endblock %}

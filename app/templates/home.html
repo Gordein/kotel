@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<header class="topbar">
+  <strong class="brand">Котёл</strong>
+  <span class="who">{{ current_user.name }}
+    <form method="post" action="{{ url_for('auth.do_logout') }}" class="inline">
+      <button class="textlink" onclick="return confirm('Выйти?')">выйти</button>
+    </form>
+  </span>
+</header>
+
+{% include "partials/add_form.html" %}
+
+<div id="dyn" hx-get="{{ url_for('balance.home_dynamic', since=loaded_at) }}"
+     hx-trigger="every 15s" hx-swap="innerHTML">
+  {% include "partials/home_dynamic.html" %}
+</div>
+{% endblock %}

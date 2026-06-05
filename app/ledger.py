@@ -17,3 +17,9 @@ def load_ledger(s):
                    for x in s.query(Settlement).filter_by(deleted_at=None).all()]
     net = compute_balances(expenses, settlements)
     return people, net, suggest_transfers(net)
+
+
+def activity_count(s):
+    """Number of live feed items (expenses + settlements). Used to detect new activity."""
+    return (s.query(Expense).filter_by(deleted_at=None).count()
+            + s.query(Settlement).filter_by(deleted_at=None).count())

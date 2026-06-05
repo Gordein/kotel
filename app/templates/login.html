@@ -1,10 +1,13 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Котёл</h1>
-<form method="post" action="{{ url_for('auth.do_login') }}">
-  <label>PIN<input name="pin" type="password" inputmode="numeric" autocomplete="off"
-                   maxlength="8" autofocus required></label>
-  {% if error %}<p class="warn">{{ error }}</p>{% endif %}
-  <button class="btn" style="margin-top:16px">Войти</button>
-</form>
+<div style="margin-top:18vh">
+  <h1 style="font-size:24px">Котёл</h1>
+  <p class="muted" style="margin-top:-6px">расходы на квартиру</p>
+  <form method="post" action="{{ url_for('auth.do_login') }}" class="card" style="margin-top:18px">
+    <span class="lbl" style="margin-top:0">PIN</span>
+    <input name="pin" type="password" inputmode="numeric" autocomplete="off" maxlength="8" autofocus required>
+    {% if error %}<p class="warn">{{ error }}</p>{% endif %}
+    <button class="btn primary" type="submit" style="margin-top:16px">Войти</button>
+  </form>
+</div>
 {% endblock %}

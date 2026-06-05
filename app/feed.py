@@ -1,42 +1,37 @@
-from datetime import date
+from decimal import Decimal
 
-from .models import Comment, Expense, Settlement
-
-
-def _count(session, target_type, target_id):
-    return (session.query(Comment)
-            .filter_by(target_type=target_type, target_id=target_id, deleted_at=None).count())
+from .constants import RU_MONTHS
+from .models import Expense, Settlement
 
 
-def _first(y, m):
-    return date(y, m, 1)
-
-
-def _next(y, m):
-    return date(y + 1, 1, 1) if m == 12 else date(y, m + 1, 1)
-
-
-def build_feed(session, *, month=None, limit=100):
-    """Return list of feed items (dicts) newest-first.
-    Derived from Expense + Settlement (no separate activity table).
-    Each item: {kind, id, when, actor_id, ..., comment_count}.
-    """
+def build_feed(s, limit=300):
+    """Activity feed (derived). Newest-first by operation date, then by add time."""
     items = []
-    eq = session.query(Expense).filter_by(deleted_at=None)
-    sq = session.query(Settlement).filter_by(deleted_at=None)
-    if month:
-        y, m = month
-        eq = eq.filter(Expense.spent_on >= _first(y, m), Expense.spent_on < _next(y, m))
-        sq = sq.filter(Settlement.settled_on >= _first(y, m), Settlement.settled_on < _next(y, m))
-    for e in eq.all():
-        items.append({"kind": "expense", "id": e.id, "when": e.created_at,
-                      "actor_id": e.created_by_id, "title": e.title,
-                      "amount": e.amount, "category": e.category,
-                      "comment_count": _count(session, "expense", e.id)})
-    for st in sq.all():
-        items.append({"kind": "settlement", "id": st.id, "when": st.created_at,
+    for e in s.query(Expense).filter_by(deleted_at=None).all():
+        items.append({"kind": "expense", "id": e.id, "when": e.created_at, "on_date": e.spent_on,
+                      "actor_id": e.created_by_id, "title": e.title, "amount": e.amount,
+                      "category": e.category, "note": e.note or ""})
+    for st in s.query(Settlement).filter_by(deleted_at=None).all():
+        items.append({"kind": "settlement", "id": st.id, "when": st.created_at, "on_date": st.settled_on,
                       "actor_id": st.created_by_id, "from_id": st.from_person_id,
                       "to_id": st.to_person_id, "amount": st.amount, "method": st.method,
-                      "comment_count": _count(session, "settlement", st.id)})
-    items.sort(key=lambda x: x["when"], reverse=True)
+                      "note": st.note or ""})
+    items.sort(key=lambda x: (x["on_date"], x["when"]), reverse=True)
     return items[:limit]
+
+
+def group_by_month(items):
+    """Group feed items by the operation month. Total = expenses spent that month."""
+    groups = []
+    cur = None
+    for it in items:
+        d = it["on_date"]
+        key = (d.year, d.month)
+        if cur is None or cur["key"] != key:
+            cur = {"key": key, "label": f"{RU_MONTHS[d.month]} {d.year}",
+                   "total": Decimal("0.00"), "items": []}
+            groups.append(cur)
+        cur["items"].append(it)
+        if it["kind"] == "expense":
+            cur["total"] += it["amount"]
+    return groups

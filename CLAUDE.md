@@ -1,44 +1,47 @@
 # Котёл — сплиттер расходов на квартиру (3 соседа, zł)
 
-Flask + HTMX + Alpine + SQLite (WAL). PWA. Не SPA. Источник истины — этот файл и
-`docs/superpowers/specs/2026-06-05-kotel-design.md`.
+Flask + HTMX + Alpine + SQLite (WAL). PWA. Не SPA. Один экран, спокойный дизайн.
+Источник истины — этот файл и `docs/superpowers/specs/2026-06-05-kotel-design.md`.
 
 ## Принципы
-- Балансы НЕ хранятся — считаются на чтении из неизменяемых записей (нет гонки на счётчике).
-- Правки траты — через оптимистичную блокировку (`version`). Записи — `request_id` (idempotency).
-- Удаление — мягкое (`deleted_at`). Деньги/комментарии не теряются.
-- Чистая логика (`money.py`, `balances.py`) — без Flask/DB, покрыта тестами.
-- Сервисы (`expenses.py`, `settlements.py`, `comments.py`, `templates_svc.py`) владеют
-  записью + валидацией; views тонкие и зовут сервисы.
-- Одна валюта (zł), одна квартира, без уведомлений. UI без перегруза.
-- Вход **только по PIN** (PIN уникален и определяет аккаунт; чужой PIN не сбрасывается).
-- Баланс **эго-центричный** — каждый видит только свои долги; граф рисует только свои рёбра.
-- `ledger.py` — единая загрузка баланса из БД (для экранов «Баланс» и «Закрыть долг»).
-- CLI-вывод — только ASCII (консоль Windows = cp1252). В вебе UTF-8 везде.
+- **Один экран** (`home.html`): сверху форма записи траты, ниже — баланс + лента по месяцам.
+  Без вкладок, без отдельных страниц «профиль/лента/граф». Settle — отдельная мини-страница.
+- **Плательщик = текущий пользователь.** Каждый записывает то, что заплатил сам. Селектора «кто платил» нет.
+- Балансы НЕ хранятся — считаются на чтении (`ledger.py`) из неизменяемых записей.
+- Правки — оптимистичная блокировка (`version`); записи — `request_id` (idempotency); удаление мягкое
+  (`deleted_at`), удалять можно только свои записи.
+- Баланс **эго-центричный**: только твои долги; если ты в расчёте — ничего не показываем.
+- Аннотация к трате — поле `note` (не отдельные комментарии). В ленте разворачивается.
+- Время хранится в **UTC**, показывается в **Europe/Warsaw** (Jinja-фильтр `dt`; нужен пакет `tzdata`).
+- Живое обновление: `#dyn` поллит `/partials/home` каждые 15с; новые записи помечаются точкой
+  (сравнение `when > new_after`), форма ввода вне поллинга — не стирается.
+- Спокойная палитра, low-contrast, без эмодзи. CLI-вывод — только ASCII (Windows cp1252).
+- Одна валюта (zł), одна квартира, без уведомлений. Старт пустой (только люди + шаблон аренды).
 
 ## Структура
 ```
 app/
-  __init__.py      app factory, регистрация blueprints, init-db CLI
+  __init__.py      app factory, blueprints (auth, balance, expense, settlement), init-db CLI, dt-фильтр
+  constants.py     CATEGORIES (Квартира/Продукты/Хозтовары/Другое), RU_MONTHS
   config.py db.py  конфиг + движок (WAL)
-  models.py        Person, Expense(+payers/shares), Settlement, Comment, Template
-  money.py         parse/format/equal-split
-  balances.py      compute_balances, suggest_transfers
-  auth.py          PIN, login/session, current_user, reset_pin
-  expenses.py settlements.py comments.py templates_svc.py   сервисы
-  feed.py          сборка ленты (derived)
-  views/           blueprints: auth, balance, expense, settlement, feed, profile
-  templates/ static/
-tests/             pytest (домен + сервисы + рендеры + флоу)
+  models.py        Person, Expense(+payers/shares), Settlement, Template  (Comment удалён)
+  money.py balances.py ledger.py   чистая логика + загрузка баланса
+  auth.py          PIN-вход (только PIN), current_user
+  expenses.py settlements.py templates_svc.py   сервисы (+ pending_templates)
+  feed.py          сборка ленты + группировка по месяцам
+  views/           auth_views, balance_views (home + /partials/home), expense_views, settlement_views
+  templates/       base, home, login, settle_form + partials/(add_form, home_dynamic, balance_summary, feed_list, form_error)
+  static/          styles.css (спокойная палитра), app.js, manifest, sw.js, иконки
+tests/             pytest
 ```
 
 ## Команды
 ```
 .venv\Scripts\python.exe -m flask --app wsgi init-db
-.venv\Scripts\python.exe -m flask --app wsgi run --port 8000
+.venv\Scripts\python.exe -m flask --app wsgi run --host 0.0.0.0 --port 8000
 .venv\Scripts\python.exe -m pytest -q
 ```
 
 ## Чего НЕ делать (YAGNI)
-Несколько квартир, уведомления/push, мультивалюта, фото чеков, офлайн-запись,
-websockets, редактирование категорий из UI, удаление/добавление людей.
+Несколько квартир, уведомления/push, мультивалюта, фото чеков, офлайн-запись, websockets,
+отдельный профиль/смена PIN из UI, комментарии-треды, граф, поиск/пагинация ленты.
