@@ -112,3 +112,11 @@ def test_comment_flow(client, app):
     assert r.status_code in (302, 200)
     page = client.get(f"/item/expense/{eid}/comments")
     assert "тест" in page.get_data(as_text=True)
+
+
+def test_pwa_assets_served(client):
+    for path in ("/static/manifest.webmanifest", "/static/sw.js",
+                 "/static/styles.css", "/static/app.js",
+                 "/static/icon-192.png", "/static/icon-512.png"):
+        assert client.get(path).status_code == 200, path
+
