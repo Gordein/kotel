@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Котёл</h1>
+<form method="post" action="{{ url_for('auth.do_login') }}" x-data="{ pid: null }">
+  <p class="muted">Кто ты?</p>
+  <div class="chips">
+    {% for p in people %}
+    <button type="button" class="chip" :aria-pressed="pid==={{ p.id }}"
+            @click="pid={{ p.id }}" style="border-color: {{ p.color }}">{{ p.name }}</button>
+    {% endfor %}
+  </div>
+  <input type="hidden" name="person_id" :value="pid">
+  <label>PIN<input name="pin" inputmode="numeric" autocomplete="off" maxlength="8"></label>
+  {% if error %}<p class="warn">{{ error }}</p>{% endif %}
+  <button class="btn" style="margin-top:16px" :disabled="pid===null">Войти</button>
+</form>
+{% endblock %}

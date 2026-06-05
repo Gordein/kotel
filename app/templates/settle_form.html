@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Закрыть долг</h1>
+<form method="post" action="{{ url_for('settlement.create') }}" data-idempotent="1"
+      x-data="{ to: null, method: 'cash' }">
+  <label>Кому</label>
+  <div class="chips">
+    {% for p in people if p.id != current_user.id %}
+    <button type="button" class="chip" :aria-pressed="to==={{ p.id }}" @click="to={{ p.id }}">{{ p.name }}</button>
+    {% endfor %}
+    <input type="hidden" name="to_person" :value="to">
+  </div>
+  <label>Сумма, zł<input name="amount" inputmode="decimal" required></label>
+  <label>Как</label>
+  <div class="chips">
+    <button type="button" class="chip" :aria-pressed="method==='cash'" @click="method='cash'">Наличкой</button>
+    <button type="button" class="chip" :aria-pressed="method==='transfer'" @click="method='transfer'">Переводом</button>
+    <input type="hidden" name="method" :value="method">
+  </div>
+  <input type="hidden" name="settled_on" value="{{ today }}">
+  <div id="form-error"></div>
+  <button class="btn" style="margin-top:16px" :disabled="to===null">Готово</button>
+</form>
+{% endblock %}

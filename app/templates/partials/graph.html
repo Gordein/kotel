@@ -1,0 +1,17 @@
+<svg viewBox="0 0 240 200" width="100%" style="max-width:280px;display:block;margin:10px auto">
+  {% set pos = {} %}
+  {% for pid in people.keys() %}{% set _ = pos.update({pid: loop.index0}) %}{% endfor %}
+  {% set coords = [[120,30],[30,170],[210,170]] %}
+  <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+    <path d="M0,0 L6,3 L0,6 Z" fill="#d97757"/></marker></defs>
+  {% for t in transfers %}
+    {% set a = coords[pos[t['from']]] %}{% set b = coords[pos[t['to']]] %}
+    <line x1="{{ a[0] }}" y1="{{ a[1] }}" x2="{{ b[0] }}" y2="{{ b[1] }}"
+          stroke="#d97757" stroke-width="2" marker-end="url(#arrow)"/>
+    <text x="{{ (a[0]+b[0])//2 }}" y="{{ (a[1]+b[1])//2 }}" fill="#b4b2a8" font-size="11">{{ '%.0f'|format(t['amount']) }}</text>
+  {% endfor %}
+  {% for pid, p in people.items() %}
+    <circle cx="{{ coords[pos[pid]][0] }}" cy="{{ coords[pos[pid]][1] }}" r="22" fill="{{ p.color }}"/>
+    <text x="{{ coords[pos[pid]][0] }}" y="{{ coords[pos[pid]][1]+4 }}" text-anchor="middle" font-size="10" fill="#1a1a18">{{ p.name }}</text>
+  {% endfor %}
+</svg>
