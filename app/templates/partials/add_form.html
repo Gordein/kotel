@@ -8,6 +8,14 @@
           return this.manual
             ? Object.values(this.custom).reduce((a, b) => a + (parseFloat(b) || 0), 0)
             : (parseFloat(this.amount) || 0);
+        },
+        get backToMe() {
+          const names = { {% for p in people_list %}{{ p.id }}: '{{ p.name }}'{{ ',' if not loop.last }}{% endfor %} };
+          const me = {{ current_user.id }};
+          return Object.entries(this.custom)
+            .filter(([pid, v]) => Number(pid) !== me && parseFloat(v) > 0)
+            .map(([pid, v]) => names[pid] + ' вернёт тебе ' + parseFloat(v).toFixed(2))
+            .join(', ');
         }
       }">
   <span class="lbl" style="margin-top:0">Ты заплатил</span>
@@ -49,6 +57,7 @@
   </div>
   <p class="hint" x-show="!manual && amount && parts.length"
      x-text="(parseFloat(amount || 0) / parts.length).toFixed(2) + ' zł на каждого'"></p>
+  <p class="hint" x-show="manual && backToMe" x-text="backToMe + ' zł'"></p>
 
   <button type="button" class="textlink note-toggle" @click="note = !note"
           x-text="note ? 'убрать примечание' : '+ примечание'"></button>
