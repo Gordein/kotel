@@ -1,5 +1,6 @@
 import uuid
 from datetime import date
+from decimal import Decimal
 
 from flask import Blueprint, make_response, redirect, render_template, request, url_for
 
@@ -14,12 +15,31 @@ bp = Blueprint("expense", __name__)
 
 
 def _ok(target):
-    """Success response: HTMX navigates via HX-Redirect, plain POST falls back to a redirect."""
+    """HTMX navigates via HX-Redirect; plain POST falls back to a redirect."""
     if request.headers.get("HX-Request"):
         resp = make_response("", 204)
         resp.headers["HX-Redirect"] = target
         return resp
     return redirect(target)
+
+
+def _shares_from_form(form):
+    """Return (amount, shares). Equal split among picked people, or manual per-person amounts."""
+    if form.get("split_mode") == "custom":
+        shares = {}
+        for pid, amt in zip(form.getlist("cpid"), form.getlist("camount")):
+            amt = (amt or "").strip()
+            if amt:
+                shares[int(pid)] = parse_amount(amt)
+        if not shares:
+            raise ValidationError("Укажи долю хотя бы одному")
+        return sum(shares.values(), Decimal("0")), shares
+    amount = parse_amount(form.get("amount", ""))
+    participants = [int(x) for x in form.getlist("participant")]
+    if not participants:
+        raise ValidationError("Выбери, на кого делить")
+    amounts = split_equal(amount, len(participants))
+    return amount, {pid: amt for pid, amt in zip(participants, amounts)}
 
 
 @bp.post("/expense")
@@ -29,12 +49,7 @@ def create():
     me = current_user()
     form = request.form
     try:
-        amount = parse_amount(form.get("amount", ""))
-        participants = [int(x) for x in form.getlist("participant")]
-        if not participants:
-            raise ValidationError("Выбери, на кого делить")
-        amounts = split_equal(amount, len(participants))
-        shares = {pid: amt for pid, amt in zip(participants, amounts)}
+        amount, shares = _shares_from_form(form)
         # payer is always the current user — each person records what THEY paid
         create_expense(s, created_by=me.id, title=(form.get("title") or "").strip() or "Без названия",
                        category=form.get("category", "Другое"),

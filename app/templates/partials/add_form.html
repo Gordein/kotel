@@ -1,12 +1,21 @@
 <form class="card add" method="post" action="{{ url_for('expense.create') }}" data-idempotent="1"
       hx-post="{{ url_for('expense.create') }}" hx-target="#form-error" hx-swap="innerHTML"
-      x-data="{ amount:'', cat:'Продукты', note:false,
-                participants:[{% for p in people_list %}{{ p.id }}{{ ',' if not loop.last }}{% endfor %}] }">
+      x-data="{
+        amount: '', cat: 'Продукты', note: false, manual: false,
+        parts: [{% for p in people_list %}{{ p.id }}{{ ',' if not loop.last }}{% endfor %}],
+        custom: { {% for p in people_list %}{{ p.id }}: ''{{ ',' if not loop.last }}{% endfor %} },
+        get total() {
+          return this.manual
+            ? Object.values(this.custom).reduce((a, b) => a + (parseFloat(b) || 0), 0)
+            : (parseFloat(this.amount) || 0);
+        }
+      }">
   <span class="lbl" style="margin-top:0">Ты заплатил</span>
   <div class="add-row">
-    <input class="amount-input" name="amount" x-model="amount" inputmode="decimal" placeholder="0"
-           autocomplete="off"
+    <input class="amount-input" name="amount" inputmode="decimal" placeholder="0" autocomplete="off"
+           x-show="!manual" x-model="amount"
            @input="amount = amount.replace(',', '.').replace(/[^0-9.]/g,'').replace(/(\..*)\./g,'$1')">
+    <span class="amount-input" x-show="manual" x-text="total.toFixed(2)"></span>
     <span class="cur">zł</span>
   </div>
   <input class="title-input" name="title" placeholder="за что (необязательно)" autocomplete="off">
@@ -19,22 +28,37 @@
   </div>
 
   <div class="split">
-    <span class="lbl">Делим на</span>
-    <div class="chips">
+    <div class="row" style="margin-top:12px">
+      <span class="lbl" style="margin-top:0">Делим на</span>
+      <button type="button" class="textlink" @click="manual = !manual"
+              x-text="manual ? 'поровну' : 'разные доли'"></button>
+    </div>
+    <div class="chips" x-show="!manual">
       {% for p in people_list %}
-      <button type="button" class="chip" :class="{ on: participants.includes({{ p.id }}) }"
-              @click="participants.includes({{ p.id }}) ? participants = participants.filter(x => x !== {{ p.id }}) : participants.push({{ p.id }})">{{ p.name }}</button>
+      <button type="button" class="chip" :class="{ on: parts.includes({{ p.id }}) }"
+              @click="parts.includes({{ p.id }}) ? parts = parts.filter(x => x !== {{ p.id }}) : parts.push({{ p.id }})">{{ p.name }}</button>
+      {% endfor %}
+    </div>
+    <div class="shares" x-show="manual" x-cloak>
+      {% for p in people_list %}
+      <label class="share-row"><span>{{ p.name }}</span>
+        <input inputmode="decimal" placeholder="0" autocomplete="off" x-model="custom[{{ p.id }}]"
+               @input="custom[{{ p.id }}] = custom[{{ p.id }}].replace(',', '.').replace(/[^0-9.]/g,'').replace(/(\..*)\./g,'$1')"></label>
       {% endfor %}
     </div>
   </div>
-  <p class="hint" x-show="amount && participants.length"
-     x-text="(parseFloat(amount || 0) / participants.length).toFixed(2) + ' zł на каждого'"></p>
+  <p class="hint" x-show="!manual && amount && parts.length"
+     x-text="(parseFloat(amount || 0) / parts.length).toFixed(2) + ' zł на каждого'"></p>
 
   <button type="button" class="textlink note-toggle" @click="note = !note"
           x-text="note ? 'убрать примечание' : '+ примечание'"></button>
   <textarea name="note" x-show="note" rows="2" placeholder="детали, если нужно"></textarea>
 
-  <template x-for="pid in participants" :key="pid"><input type="hidden" name="participant" :value="pid"></template>
+  <input type="hidden" name="split_mode" :value="manual ? 'custom' : 'equal'">
+  <template x-for="pid in parts" :key="pid"><input type="hidden" name="participant" :value="pid"></template>
+  <template x-for="pid in Object.keys(custom)" :key="'c' + pid">
+    <span><input type="hidden" name="cpid" :value="pid"><input type="hidden" name="camount" :value="custom[pid]"></span>
+  </template>
   <input type="hidden" name="spent_on" value="{{ today }}">
   <div id="form-error"></div>
   <button class="btn primary" type="submit">Добавить трату</button>

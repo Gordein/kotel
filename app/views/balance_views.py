@@ -20,19 +20,11 @@ def _debts(s, me):
 
 
 def _view(s, args, today):
-    """Filter the feed by person + (search OR a single month). Returns a view dict."""
+    """Filter the feed by person + a single month. Returns a view dict."""
     items = build_feed(s)
     person = args.get("person", type=int)
     if person:
         items = [it for it in items if it["actor_id"] == person]
-
-    q = (args.get("q") or "").strip()
-    if q:
-        ql = q.lower()
-        shown = [it for it in items
-                 if ql in (it.get("title", "") + " " + it.get("note", "")).lower()]
-        return {"groups": group_by_month(shown), "person": person, "q": q,
-                "month": "", "nav": None}
 
     months = []
     for it in items:
@@ -56,7 +48,7 @@ def _view(s, args, today):
     nav = {"label": f"{RU_MONTHS[sel[1]]} {sel[0]}",
            "prev": f"{prev[0]}-{prev[1]:02d}" if prev else "",
            "next": f"{nxt[0]}-{nxt[1]:02d}" if nxt else ""}
-    return {"groups": group_by_month(shown), "person": person, "q": "",
+    return {"groups": group_by_month(shown), "person": person,
             "month": f"{sel[0]}-{sel[1]:02d}", "nav": nav}
 
 

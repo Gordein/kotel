@@ -19,26 +19,17 @@
     <a class="chip {{ 'on' if view.person == p.id }}" href="{{ url_for('balance.index', person=p.id) }}">{{ p.name }}</a>
     {% endfor %}
   </div>
-  <div class="controls-row">
-    {% if view.q %}
-    <span class="muted">поиск: «{{ view.q }}»</span>
-    <a class="textlink" href="{{ url_for('balance.index', person=view.person) }}">сброс</a>
-    {% elif view.nav %}
-    <span class="monthnav">
-      {% if view.nav.prev %}<a href="{{ url_for('balance.index', person=view.person, month=view.nav.prev) }}">‹</a>{% else %}<span class="dim">‹</span>{% endif %}
-      <span class="ml">{{ view.nav.label }}</span>
-      {% if view.nav.next %}<a href="{{ url_for('balance.index', person=view.person, month=view.nav.next) }}">›</a>{% else %}<span class="dim">›</span>{% endif %}
-    </span>
-    {% endif %}
-    <form class="search" method="get" action="{{ url_for('balance.index') }}">
-      {% if view.person %}<input type="hidden" name="person" value="{{ view.person }}">{% endif %}
-      <input name="q" value="{{ view.q }}" placeholder="поиск" autocomplete="off">
-    </form>
+  {% if view.nav %}
+  <div class="monthnav">
+    {% if view.nav.prev %}<a href="{{ url_for('balance.index', person=view.person, month=view.nav.prev) }}">‹</a>{% else %}<span class="dim">‹</span>{% endif %}
+    <span class="ml">{{ view.nav.label }}</span>
+    {% if view.nav.next %}<a href="{{ url_for('balance.index', person=view.person, month=view.nav.next) }}">›</a>{% else %}<span class="dim">›</span>{% endif %}
   </div>
+  {% endif %}
 </div>
 {% endif %}
 
-<div id="dyn" hx-get="{{ url_for('balance.home_dynamic', since=loaded_at, person=view.person, month=view.month, q=view.q) }}"
+<div id="dyn" hx-get="{{ url_for('balance.home_dynamic', since=loaded_at, person=view.person, month=view.month) }}"
      hx-trigger="every 15s" hx-swap="innerHTML">
   {% include "partials/home_dynamic.html" %}
 </div>

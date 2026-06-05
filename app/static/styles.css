@@ -73,13 +73,14 @@ textarea { resize: vertical; }
 a.chip { text-decoration: none; }
 .controls { margin: 16px 0 2px; }
 .filters { display: flex; flex-wrap: wrap; gap: 8px; }
-.controls-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 12px; }
-.monthnav { display: flex; align-items: center; gap: 10px; }
+.monthnav { display: flex; align-items: center; gap: 14px; margin-top: 12px; }
 .monthnav a { text-decoration: none; font-size: 20px; line-height: 1; }
 .monthnav .dim { color: var(--line); font-size: 20px; line-height: 1; }
-.monthnav .ml { color: var(--text); font-weight: 600; font-size: 14px; min-width: 96px; text-align: center; }
-.search { width: auto; }
-.search input { margin: 0; padding: 8px 11px; width: 140px; }
+.monthnav .ml { color: var(--text); font-weight: 600; font-size: 14px; }
+.shares { margin-top: 8px; }
+.share-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 8px; }
+.share-row span { color: var(--text); }
+.share-row input { width: 120px; margin: 0; padding: 9px 11px; }
 
 /* balances */
 .balances .lbl { margin-top: 0; }
