@@ -64,7 +64,6 @@ textarea { resize: vertical; }
 .note-toggle { display: inline-block; margin-top: 12px; font-size: 13px; }
 .add textarea { margin-top: 8px; }
 .add .btn.primary { margin-top: 16px; }
-.rent-prompt { margin: -2px 0 14px; }
 
 /* chips */
 .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }

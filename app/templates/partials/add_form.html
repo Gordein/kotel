@@ -39,9 +39,3 @@
   <div id="form-error"></div>
   <button class="btn primary" type="submit">Добавить трату</button>
 </form>
-
-{% for t in pending %}
-<form method="post" action="{{ url_for('expense.from_template', template_id=t.id) }}" class="rent-prompt">
-  <button class="textlink" type="submit">{{ t.title }} за этот месяц ещё не внесена — добавить</button>
-</form>
-{% endfor %}

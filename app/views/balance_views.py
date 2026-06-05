@@ -9,7 +9,6 @@ from ..db import SessionLocal
 from ..feed import build_feed, group_by_month
 from ..ledger import activity_count, load_ledger
 from ..models import Person, _utcnow
-from ..templates_svc import pending_templates
 
 bp = Blueprint("balance", __name__)
 
@@ -74,8 +73,7 @@ def index():
         "home.html",
         people=people, owe=owe, owed=owed, view=view, groups=view["groups"],
         people_list=s.query(Person).order_by(Person.id).all(),
-        categories=CATEGORIES, pending=pending_templates(s, today.year, today.month),
-        today=today.isoformat(), has_activity=activity_count(s) > 0,
+        categories=CATEGORIES, today=today.isoformat(), has_activity=activity_count(s) > 0,
         new_after=loaded_at, loaded_at=loaded_at.isoformat(),
     )
 

@@ -9,7 +9,6 @@ from ..errors import ValidationError
 from ..expenses import create_expense, soft_delete_expense
 from ..models import Expense
 from ..money import parse_amount, split_equal
-from ..templates_svc import instantiate_template
 
 bp = Blueprint("expense", __name__)
 
@@ -45,19 +44,6 @@ def create():
     except (ValidationError, ValueError) as e:
         return render_template("partials/form_error.html", error=str(e)), 422
     return _ok(url_for("balance.index"))
-
-
-@bp.post("/expense/from-template/<int:template_id>")
-@require_login
-def from_template(template_id):
-    s = SessionLocal()
-    today = date.today()
-    try:
-        instantiate_template(s, template_id=template_id, year=today.year, month=today.month,
-                             by=current_user().id)
-    except ValidationError:
-        pass  # already added this month — just return home
-    return redirect(url_for("balance.index"))
 
 
 @bp.post("/expense/<int:expense_id>/delete")

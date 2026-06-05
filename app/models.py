@@ -32,7 +32,6 @@ class Expense(Base):
     spent_on: Mapped[date] = mapped_column()
     note: Mapped[str] = mapped_column(Text, default="")
     created_by_id: Mapped[int] = mapped_column(ForeignKey("people.id"))
-    template_id: Mapped[int | None] = mapped_column(ForeignKey("templates.id"), nullable=True)
     version: Mapped[int] = mapped_column(default=1)
     request_id: Mapped[str] = mapped_column(String(64), unique=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
@@ -73,14 +72,3 @@ class Settlement(Base):
     request_id: Mapped[str] = mapped_column(String(64), unique=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=_utcnow)
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-
-
-class Template(Base):
-    __tablename__ = "templates"
-    id: Mapped[int] = mapped_column(primary_key=True)
-    title: Mapped[str] = mapped_column(String(120))
-    category: Mapped[str] = mapped_column(String(40), default="Квартира")
-    default_payers: Mapped[str] = mapped_column(Text)  # JSON: {"name": "amount"}
-    default_shares: Mapped[str] = mapped_column(Text)   # JSON: {"name": "amount"}
-    note: Mapped[str] = mapped_column(Text, default="")
-    active: Mapped[bool] = mapped_column(default=True)

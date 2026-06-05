@@ -126,26 +126,6 @@ def test_settle_screen_when_nothing_owed(client, app):
     assert "никому не должен" in page.get_data(as_text=True)
 
 
-def test_from_template_creates_rent_idempotently(client, app):
-    import json
-    _login(client, app)
-    from app.db import SessionLocal
-    from app.models import Expense, Template
-    with app.app_context():
-        s = SessionLocal()
-        s.add(Template(title="Аренда", category="Квартира",
-                       default_payers=json.dumps({"Люда": "2600", "Микита": "2600"}),
-                       default_shares=json.dumps({"Сэм": "1900", "Люда": "1900", "Микита": "1400"}),
-                       note="x"))
-        s.commit()
-        tid = s.query(Template).first().id
-    assert client.post(f"/expense/from-template/{tid}").status_code in (302, 200)
-    assert client.post(f"/expense/from-template/{tid}").status_code in (302, 200)  # 2nd: no error page
-    from decimal import Decimal
-    with app.app_context():
-        assert SessionLocal().query(Expense).filter(Expense.amount == Decimal("5200")).count() == 1
-
-
 def test_both_others_owe_the_payer(client, app):
     ids = _seed_people(app)
     client.post("/login", data={"pin": "222"})  # Люда pays

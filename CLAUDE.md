@@ -22,7 +22,8 @@ Flask + HTMX + Alpine + SQLite (WAL). PWA. Не SPA. Один экран, спо
 - Живое обновление: `#dyn` поллит `/partials/home` каждые 15с; новые записи помечаются точкой
   (сравнение `when > new_after`), форма ввода вне поллинга — не стирается.
 - Спокойная палитра, low-contrast, без эмодзи. CLI-вывод — только ASCII (Windows cp1252).
-- Одна валюта (zł), одна квартира, без уведомлений. Старт пустой (только люди + шаблон аренды).
+- Одна валюта (zł), одна квартира, без уведомлений. Старт пустой (только люди, без трат).
+- Аренду вносят как обычную трату категории «Квартира» — отдельного шаблона/кнопки нет.
 
 ## Структура
 ```
@@ -33,7 +34,7 @@ app/
   models.py        Person, Expense(+payers/shares), Settlement, Template  (Comment удалён)
   money.py balances.py ledger.py   чистая логика + загрузка баланса
   auth.py          PIN-вход (только PIN), current_user
-  expenses.py settlements.py templates_svc.py   сервисы (+ pending_templates)
+  expenses.py settlements.py   сервисы
   feed.py          сборка ленты + группировка по месяцам
   views/           auth_views, balance_views (home + /partials/home), expense_views, settlement_views
   templates/       base, home, login, settle_form + partials/(add_form, home_dynamic, balance_summary, feed_list, form_error)
@@ -50,4 +51,4 @@ tests/             pytest
 
 ## Чего НЕ делать (YAGNI)
 Несколько квартир, уведомления/push, мультивалюта, фото чеков, офлайн-запись, websockets,
-отдельный профиль/смена PIN из UI, комментарии-треды, граф, поиск/пагинация ленты.
+отдельный профиль/смена PIN из UI, комментарии-треды, граф, шаблоны трат.
