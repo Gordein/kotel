@@ -146,6 +146,44 @@ def test_from_template_creates_rent_idempotently(client, app):
         assert SessionLocal().query(Expense).filter(Expense.amount == Decimal("5200")).count() == 1
 
 
+def test_both_others_owe_the_payer(client, app):
+    ids = _seed_people(app)
+    client.post("/login", data={"pin": "222"})  # Люда pays
+    client.post("/expense", data={"amount": "60", "category": "Другое",
+        "participant": [ids["Сэм"], ids["Люда"], ids["Микита"]],
+        "spent_on": "2026-06-05", "request_id": "a-1"})
+    from decimal import Decimal
+    from app.db import SessionLocal
+    from app.ledger import load_ledger
+    with app.app_context():
+        _people, pw = load_ledger(SessionLocal())
+        assert pw[(ids["Сэм"], ids["Люда"])] == Decimal("20.00")
+        assert pw[(ids["Микита"], ids["Люда"])] == Decimal("20.00")  # not zero!
+
+
+def test_exclude_person_from_split(client, app):
+    ids = _seed_people(app)
+    client.post("/login", data={"pin": "222"})  # Люда pays, Сэм excluded
+    client.post("/expense", data={"amount": "60", "category": "Другое",
+        "participant": [ids["Люда"], ids["Микита"]], "spent_on": "2026-06-05", "request_id": "x-1"})
+    from app.db import SessionLocal
+    from app.models import Expense, ExpenseShare
+    with app.app_context():
+        s = SessionLocal()
+        e = s.query(Expense).filter_by(request_id="x-1").first()
+        pids = {sh.person_id for sh in s.query(ExpenseShare).filter_by(expense_id=e.id)}
+        assert ids["Сэм"] not in pids
+        assert pids == {ids["Люда"], ids["Микита"]}
+
+
+def test_person_filter(client, app):
+    ids = _login(client, app)  # Сэм
+    client.post("/expense", data={"amount": "10", "title": "sambuy", "category": "Другое",
+        "participant": [ids["Сэм"]], "spent_on": "2026-06-05", "request_id": "pf-1"})
+    assert "sambuy" not in client.get(f"/?person={ids['Люда']}").get_data(as_text=True)
+    assert "sambuy" in client.get(f"/?person={ids['Сэм']}").get_data(as_text=True)
+
+
 def test_empty_amount_returns_422_not_500(client, app):
     ids = _login(client, app)
     r = client.post("/expense", data={"amount": "", "participant": [ids["Сэм"]],

@@ -1,40 +1,45 @@
 from decimal import Decimal
 
-from app.balances import compute_balances, suggest_transfers
+from app.balances import compute_pairwise, debts_for
 
 D = Decimal
 
 
-def test_rent_case():
-    # Lyuda & Mikita each paid 2600; split Sam 1900 / Lyuda 1900 / Mikita 1400
-    expenses = [{
-        "payers": {"lyuda": D("2600"), "mikita": D("2600")},
-        "shares": {"sam": D("1900"), "lyuda": D("1900"), "mikita": D("1400")},
-    }]
-    net = compute_balances(expenses, [])
-    assert net["sam"] == D("-1900")
-    assert net["lyuda"] == D("700")
-    assert net["mikita"] == D("1200")
-    assert sum(net.values()) == D("0")
+def test_single_payer_charges_each_other_to_payer():
+    e = [{"payers": {"luda": D("60")}, "shares": {"sam": D("20"), "luda": D("20"), "mikita": D("20")}}]
+    pw = compute_pairwise(e, [])
+    # both others owe the payer — this is the bug we fixed
+    assert pw[("sam", "luda")] == D("20.00")
+    assert pw[("mikita", "luda")] == D("20.00")
+    assert ("luda", "sam") not in pw
 
 
-def test_settlement_reduces_debt():
-    expenses = [{"payers": {"lyuda": D("700")}, "shares": {"sam": D("700")}}]
-    settlements = [{"from": "sam", "to": "lyuda", "amount": D("700")}]
-    net = compute_balances(expenses, settlements)
-    assert net["sam"] == D("0")
-    assert net["lyuda"] == D("0")
+def test_excluded_person_is_not_charged():
+    e = [{"payers": {"luda": D("60")}, "shares": {"luda": D("30"), "mikita": D("30")}}]
+    pw = compute_pairwise(e, [])
+    assert pw[("mikita", "luda")] == D("30.00")
+    assert ("sam", "luda") not in pw
 
 
-def test_suggest_transfers_settles_to_zero():
-    net = {"sam": D("-1900"), "lyuda": D("700"), "mikita": D("1200")}
-    transfers = suggest_transfers(net)
-    assert {(t["from"], t["to"], t["amount"]) for t in transfers} == {
-        ("sam", "mikita", D("1200")),
-        ("sam", "lyuda", D("700")),
-    }
-    after = dict(net)
-    for t in transfers:
-        after[t["from"]] += t["amount"]
-        after[t["to"]] -= t["amount"]
-    assert all(v == D("0") for v in after.values())
+def test_settlement_clears_debt():
+    e = [{"payers": {"luda": D("60")}, "shares": {"sam": D("60")}}]
+    pw = compute_pairwise(e, [{"from": "sam", "to": "luda", "amount": D("60")}])
+    assert pw == {}
+
+
+def test_rent_pairwise():
+    e = [{"payers": {"luda": D("2600"), "mikita": D("2600")},
+          "shares": {"sam": D("1900"), "luda": D("1900"), "mikita": D("1400")}}]
+    pw = compute_pairwise(e, [])
+    assert pw[("sam", "luda")] == D("950.00")     # Sam's 1900 split across the two payers
+    assert pw[("sam", "mikita")] == D("950.00")
+    assert pw[("luda", "mikita")] == D("250.00")  # net between the two payers
+
+
+def test_debts_for_perspective():
+    pw = {("sam", "luda"): D("20"), ("mikita", "luda"): D("30")}
+    owe, owed = debts_for(pw, "luda")
+    assert owe == []
+    assert {d["from"] for d in owed} == {"sam", "mikita"}
+    owe2, _ = debts_for(pw, "sam")
+    assert owe2 == [{"to": "luda", "amount": D("20")}]

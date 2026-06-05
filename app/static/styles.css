@@ -71,6 +71,8 @@ textarea { resize: vertical; }
 .chip { padding: 7px 13px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line);
   color: var(--muted); cursor: pointer; font-size: 14px; width: auto; }
 .chip.on { background: var(--accent-soft); border-color: var(--accent); color: var(--text); }
+a.chip { text-decoration: none; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 2px 2px; }
 
 /* balances */
 .balances .lbl { margin-top: 0; }

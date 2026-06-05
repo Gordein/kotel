@@ -1,12 +1,9 @@
-from .balances import compute_balances, suggest_transfers
+from .balances import compute_pairwise
 from .models import Expense, ExpensePayer, ExpenseShare, Person, Settlement
 
 
 def load_ledger(s):
-    """Load people + current net balances + suggested transfers from the DB.
-
-    Single source for both the balance screen and the settle screen.
-    """
+    """Load people + pairwise debts {(debtor, creditor): amount} from the DB."""
     people = {p.id: p for p in s.query(Person).all()}
     expenses = []
     for e in s.query(Expense).filter_by(deleted_at=None).all():
@@ -15,8 +12,7 @@ def load_ledger(s):
         expenses.append({"payers": payers, "shares": shares})
     settlements = [{"from": x.from_person_id, "to": x.to_person_id, "amount": x.amount}
                    for x in s.query(Settlement).filter_by(deleted_at=None).all()]
-    net = compute_balances(expenses, settlements)
-    return people, net, suggest_transfers(net)
+    return people, compute_pairwise(expenses, settlements)
 
 
 def activity_count(s):

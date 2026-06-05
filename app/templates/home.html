@@ -11,7 +11,16 @@
 
 {% include "partials/add_form.html" %}
 
-<div id="dyn" hx-get="{{ url_for('balance.home_dynamic', since=loaded_at) }}"
+{% if has_activity %}
+<div class="filters">
+  <a class="chip {{ 'on' if not person }}" href="{{ url_for('balance.index') }}">Все</a>
+  {% for p in people_list %}
+  <a class="chip {{ 'on' if person == p.id }}" href="{{ url_for('balance.index', person=p.id) }}">{{ p.name }}</a>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div id="dyn" hx-get="{{ url_for('balance.home_dynamic', since=loaded_at, person=person) }}"
      hx-trigger="every 15s" hx-swap="innerHTML">
   {% include "partials/home_dynamic.html" %}
 </div>

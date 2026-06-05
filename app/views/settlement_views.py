@@ -4,6 +4,7 @@ from datetime import date
 from flask import Blueprint, make_response, redirect, render_template, request, url_for
 
 from ..auth import current_user, require_login
+from ..balances import debts_for
 from ..db import SessionLocal
 from ..errors import ValidationError
 from ..ledger import load_ledger
@@ -27,9 +28,10 @@ def _ok(target):
 def new():
     s = SessionLocal()
     me = current_user()
-    people, _net, transfers = load_ledger(s)
+    people, pairwise = load_ledger(s)
+    owe, _owed = debts_for(pairwise, me.id)
     creditors = [{"id": t["to"], "name": people[t["to"]].name, "amount": f'{t["amount"]:.2f}'}
-                 for t in transfers if t["from"] == me.id]
+                 for t in owe]
     return render_template("settle_form.html", creditors=creditors,
                            today=date.today().isoformat())
 
