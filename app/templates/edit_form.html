@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+<a class="back" href="{{ url_for('balance.index') }}">← назад</a>
+<h1>Править трату</h1>
+<form class="card add" method="post" action="{{ url_for('expense.update', expense_id=exp.id) }}"
+      hx-post="{{ url_for('expense.update', expense_id=exp.id) }}" hx-target="#form-error" hx-swap="innerHTML"
+      x-data="{ amount: '{{ '%.2f'|format(exp.amount) }}', cat: '{{ exp.category }}',
+                note: {{ 'true' if exp.note else 'false' }},
+                participants: [{{ participants|join(', ') }}] }">
+  <span class="lbl" style="margin-top:0">Ты заплатил</span>
+  <div class="add-row">
+    <input class="amount-input" name="amount" x-model="amount" inputmode="decimal" placeholder="0" autocomplete="off"
+           @input="amount = amount.replace(',', '.').replace(/[^0-9.]/g,'').replace(/(\..*)\./g,'$1')">
+    <span class="cur">zł</span>
+  </div>
+  <input class="title-input" name="title" placeholder="за что (необязательно)" autocomplete="off" value="{{ exp.title }}">
+
+  <div class="chips cats">
+    {% for c in categories %}
+    <button type="button" class="chip" :class="{ on: cat==='{{ c }}' }" @click="cat='{{ c }}'">{{ c }}</button>
+    {% endfor %}
+    <input type="hidden" name="category" :value="cat">
+  </div>
+
+  <span class="lbl">Делим на</span>
+  <div class="chips">
+    {% for p in people_list %}
+    <button type="button" class="chip" :class="{ on: participants.includes({{ p.id }}) }"
+            @click="participants.includes({{ p.id }}) ? participants = participants.filter(x => x !== {{ p.id }}) : participants.push({{ p.id }})">{{ p.name }}</button>
+    {% endfor %}
+  </div>
+  <p class="hint" x-show="amount && participants.length"
+     x-text="(parseFloat(amount || 0) / participants.length).toFixed(2) + ' zł на каждого'"></p>
+
+  <button type="button" class="textlink note-toggle" @click="note = !note"
+          x-text="note ? 'убрать примечание' : '+ примечание'"></button>
+  <textarea name="note" x-show="note" rows="2" placeholder="детали, если нужно">{{ exp.note }}</textarea>
+
+  <template x-for="pid in participants" :key="pid"><input type="hidden" name="participant" :value="pid"></template>
+  <input type="hidden" name="version" value="{{ exp.version }}">
+  <div id="form-error"></div>
+  <button class="btn primary" type="submit">Сохранить</button>
+</form>
+{% endblock %}

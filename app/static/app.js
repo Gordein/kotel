@@ -10,7 +10,7 @@ document.addEventListener("htmx:configRequest", (e) => {
 
 // Allow validation responses (422) to swap their error fragment inline.
 document.addEventListener("htmx:beforeSwap", (e) => {
-  if (e.detail.xhr && e.detail.xhr.status === 422) {
+  if (e.detail.xhr && (e.detail.xhr.status === 422 || e.detail.xhr.status === 409)) {
     e.detail.shouldSwap = true;
     e.detail.isError = false;
   }

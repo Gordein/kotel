@@ -199,6 +199,56 @@ def test_comma_amount_accepted(client, app):
         assert SessionLocal().query(Expense).filter_by(request_id="c-1").first().amount == Decimal("20.50")
 
 
+def test_edit_expense(client, app):
+    ids = _login(client, app)  # Сэм
+    client.post("/expense", data={"amount": "30", "title": "old", "category": "Продукты",
+        "participant": [ids["Сэм"], ids["Люда"], ids["Микита"]], "spent_on": "2026-06-05",
+        "request_id": "e-1"})
+    from decimal import Decimal
+    from app.db import SessionLocal
+    from app.models import Expense
+    with app.app_context():
+        e = SessionLocal().query(Expense).filter_by(request_id="e-1").first()
+        eid, ver = e.id, e.version
+    assert client.get(f"/expense/{eid}/edit").status_code == 200
+    r = client.post(f"/expense/{eid}/edit", data={"amount": "60", "title": "new",
+        "category": "Хозтовары", "participant": [ids["Сэм"], ids["Люда"]], "version": ver})
+    assert r.status_code in (302, 200, 204)
+    with app.app_context():
+        e2 = SessionLocal().get(Expense, eid)
+        assert e2.title == "new" and e2.amount == Decimal("60.00") and e2.version == ver + 1
+
+
+def test_edit_version_conflict(client, app):
+    ids = _login(client, app)
+    client.post("/expense", data={"amount": "30", "title": "x", "category": "Другое",
+        "participant": [ids["Сэм"]], "spent_on": "2026-06-05", "request_id": "ec-1"})
+    from app.db import SessionLocal
+    from app.models import Expense
+    with app.app_context():
+        e = SessionLocal().query(Expense).filter_by(request_id="ec-1").first()
+        eid, ver = e.id, e.version
+    client.post(f"/expense/{eid}/edit", data={"amount": "40", "title": "y", "category": "Другое",
+        "participant": [ids["Сэм"]], "version": ver})  # bumps version
+    r = client.post(f"/expense/{eid}/edit", data={"amount": "50", "title": "z", "category": "Другое",
+        "participant": [ids["Сэм"]], "version": ver})  # stale version
+    assert r.status_code == 409
+
+
+def test_cannot_edit_others_expense(client, app):
+    ids = _seed_people(app)
+    client.post("/login", data={"pin": "222"})  # Люда creates
+    client.post("/expense", data={"amount": "30", "title": "x", "category": "Другое",
+        "participant": [ids["Люда"]], "spent_on": "2026-06-05", "request_id": "eo-1"})
+    client.post("/logout")
+    from app.db import SessionLocal
+    from app.models import Expense
+    with app.app_context():
+        eid = SessionLocal().query(Expense).filter_by(request_id="eo-1").first().id
+    client.post("/login", data={"pin": "111"})  # Сэм
+    assert client.get(f"/expense/{eid}/edit").status_code == 302  # redirected away
+
+
 def test_pwa_assets_served(client):
     for path in ("/static/manifest.webmanifest", "/static/sw.js",
                  "/static/styles.css", "/static/app.js",

@@ -29,6 +29,7 @@
     <span class="actions">
       {% if it['note'] %}<button type="button" class="textlink" @click="open = !open" x-text="open ? 'свернуть' : 'примечание'"></button>{% endif %}
       {% if it['actor_id'] == current_user.id %}
+      {% if it['kind'] == 'expense' %}<a class="textlink" href="{{ url_for('expense.edit', expense_id=it['id']) }}">править</a>{% endif %}
       <form method="post" class="inline" onsubmit="return confirm('Удалить запись?')"
             action="{{ url_for('expense.delete', expense_id=it['id']) if it['kind'] == 'expense' else url_for('settlement.delete', settlement_id=it['id']) }}">
         <button type="submit" class="textlink danger">удалить</button>
