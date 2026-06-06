@@ -254,7 +254,7 @@ def test_feed_shows_split(client, app):
     client.post("/expense", data={"amount": "30", "title": "vsem", "category": "Другое",
         "participant": [ids["Сэм"], ids["Люда"], ids["Микита"]], "spent_on": "2026-06-05",
         "request_id": "sp-1"})
-    assert "на всех" in client.get("/").get_data(as_text=True)
+    assert "скидываются все" in client.get("/").get_data(as_text=True)
 
 
 def test_pwa_assets_served(client):
