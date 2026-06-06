@@ -98,6 +98,7 @@ a.chip { text-decoration: none; }
 .item-main { display: flex; align-items: baseline; gap: 6px; min-width: 0; flex-wrap: wrap; }
 .who-name { font-weight: 600; }
 .what { color: var(--muted); overflow-wrap: anywhere; }
+.split-line { color: var(--muted); font-size: 12.5px; margin-top: 5px; }
 .item-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 9px; gap: 10px; }
 .meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .pill { display: inline-block; padding: 2px 9px; border-radius: 999px; background: var(--surface-2);

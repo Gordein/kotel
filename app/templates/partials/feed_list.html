@@ -17,6 +17,9 @@
     </div>
     <span class="amount">{{ '%.2f'|format(it['amount']) }} zł</span>
   </div>
+  {% if it['kind'] == 'expense' %}
+  <div class="split-line">делёж: {% if it['participant_ids']|length >= people|length %}на всех{% else %}{% for pid in it['participant_ids'] %}{{ people[pid].name }}{% if not loop.last %}, {% endif %}{% endfor %}{% endif %}</div>
+  {% endif %}
   <div class="item-foot">
     <span class="meta">
       {% if it['kind'] == 'expense' %}

@@ -1,16 +1,24 @@
 from decimal import Decimal
 
 from .constants import RU_MONTHS
-from .models import Expense, Settlement
+from .models import Expense, ExpenseShare, Settlement
 
 
 def build_feed(s, limit=300):
     """Activity feed (derived). Newest-first by operation date, then by add time."""
     items = []
-    for e in s.query(Expense).filter_by(deleted_at=None).all():
+    expenses = s.query(Expense).filter_by(deleted_at=None).all()
+    # participants per expense — one grouped query, no N+1
+    parts = {}
+    eids = [e.id for e in expenses]
+    if eids:
+        for sh in s.query(ExpenseShare).filter(ExpenseShare.expense_id.in_(eids)).all():
+            parts.setdefault(sh.expense_id, []).append(sh.person_id)
+    for e in expenses:
         items.append({"kind": "expense", "id": e.id, "when": e.created_at, "on_date": e.spent_on,
                       "actor_id": e.created_by_id, "title": e.title, "amount": e.amount,
-                      "category": e.category, "note": e.note or ""})
+                      "category": e.category, "note": e.note or "",
+                      "participant_ids": parts.get(e.id, [])})
     for st in s.query(Settlement).filter_by(deleted_at=None).all():
         items.append({"kind": "settlement", "id": st.id, "when": st.created_at, "on_date": st.settled_on,
                       "actor_id": st.created_by_id, "from_id": st.from_person_id,

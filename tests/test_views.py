@@ -249,6 +249,14 @@ def test_cannot_edit_others_expense(client, app):
     assert client.get(f"/expense/{eid}/edit").status_code == 302  # redirected away
 
 
+def test_feed_shows_split(client, app):
+    ids = _login(client, app)
+    client.post("/expense", data={"amount": "30", "title": "vsem", "category": "Другое",
+        "participant": [ids["Сэм"], ids["Люда"], ids["Микита"]], "spent_on": "2026-06-05",
+        "request_id": "sp-1"})
+    assert "на всех" in client.get("/").get_data(as_text=True)
+
+
 def test_pwa_assets_served(client):
     for path in ("/static/manifest.webmanifest", "/static/sw.js",
                  "/static/styles.css", "/static/app.js",
