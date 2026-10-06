@@ -9,7 +9,7 @@ from .models import Person
 @click.command("init-db")
 @with_appcontext
 def init_db():
-    """Create tables, seed the three flatmates (idempotent)."""
+    """Create tables, seed the flatmates (idempotent)."""
     Base.metadata.create_all(get_engine())
     s = SessionLocal()
     if s.query(Person).count() == 0:
@@ -17,10 +17,15 @@ def init_db():
             Person(name="Сэм", color="#b07a5e", pin_hash=set_pin("111")),
             Person(name="Люда", color="#6f88a4", pin_hash=set_pin("222")),
             Person(name="Мiкiта", color="#7d9a72", pin_hash=set_pin("333")),
+            Person(name="Наташа", color="#a07a9a", pin_hash=set_pin("444")),
         ])
     else:
         old = s.query(Person).filter_by(name="Микита").first()  # one-time rename on existing DBs
         if old:
             old.name = "Мiкiта"
+        # Natasha joined later: add her without touching existing records. Old expenses keep
+        # their original shares, so balances before her arrival are unchanged.
+        if not s.query(Person).filter_by(name="Наташа").first():
+            s.add(Person(name="Наташа", color="#a07a9a", pin_hash=set_pin("444")))
     s.commit()
-    click.echo("DB ready. PINs -> Sam:111  Luda:222  Mikita:333")
+    click.echo("DB ready. PINs -> Sam:111  Luda:222  Mikita:333  Natasha:444")

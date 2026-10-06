@@ -262,3 +262,35 @@ def test_pwa_assets_served(client):
                  "/static/styles.css", "/static/app.js",
                  "/static/icon-192.png", "/static/icon-512.png"):
         assert client.get(path).status_code == 200, path
+
+
+def test_late_joiner_keeps_old_splits_and_can_be_selected(client, app):
+    from datetime import date, datetime, timedelta, timezone
+    from app.auth import set_pin
+    from app.db import SessionLocal
+    from app.ledger import load_ledger
+    from app.models import Person
+    ids = _login(client, app)
+    today = date.today().isoformat()
+    client.post("/expense", data={"amount": "30", "title": "old", "category": "Другое",
+        "participant": [ids["Сэм"], ids["Люда"], ids["Микита"]], "spent_on": today,
+        "request_id": "lj-1"})
+    with app.app_context():
+        s = SessionLocal()
+        joined = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(seconds=1)
+        s.add(Person(name="Наташа", color="#888", pin_hash=set_pin("444"), created_at=joined))
+        s.commit()
+        nat = s.query(Person).filter_by(name="Наташа").one().id
+    page = client.get("/").get_data(as_text=True)
+    assert "Наташа" in page                  # selectable in the form
+    assert "скидываются все" in page         # old 3-way split still reads as "все"
+    with app.app_context():
+        _, pairwise = load_ledger(SessionLocal())
+    assert all(nat not in pair for pair in pairwise)   # nothing retroactive
+    client.post("/logout")
+    assert client.post("/login", data={"pin": "444"}).status_code == 302
+    client.post("/expense", data={"amount": "40", "title": "new", "category": "Другое",
+        "participant": list(ids.values()) + [nat], "spent_on": today, "request_id": "lj-2"})
+    with app.app_context():
+        _, pairwise = load_ledger(SessionLocal())
+    assert pairwise[(ids["Сэм"], nat)] == 10
