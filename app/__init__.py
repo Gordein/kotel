@@ -16,6 +16,10 @@ def create_app(config_object=Config):
     engine = init_engine(app.config["DB_PATH"])
     from . import models  # noqa: F401  (register mappers)
     Base.metadata.create_all(engine)
+    if not app.config.get("TESTING"):
+        from .cli import ensure_people
+        ensure_people(SessionLocal())  # new flatmates appear on plain reload, no init-db needed
+        SessionLocal.remove()
 
     @app.teardown_appcontext
     def _remove_session(exc=None):

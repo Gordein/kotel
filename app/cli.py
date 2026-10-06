@@ -5,27 +5,35 @@ from .auth import set_pin
 from .db import Base, SessionLocal, get_engine
 from .models import Person
 
+# name, color, default PIN. Order = seed order on a fresh DB.
+FLATMATES = [
+    ("Сэм", "#b07a5e", "111"),
+    ("Люда", "#6f88a4", "222"),
+    ("Мiкiта", "#7d9a72", "333"),
+    ("Наташа", "#a07a9a", "444"),
+]
+
+
+def ensure_people(s):
+    """Idempotent: add missing flatmates, apply one-time renames. Runs on every app start.
+
+    Late joiners (Наташа) are only added — existing expenses keep their shares,
+    so balances before they joined are unchanged.
+    """
+    old = s.query(Person).filter_by(name="Микита").first()  # one-time rename on existing DBs
+    if old and not s.query(Person).filter_by(name="Мiкiта").first():
+        old.name = "Мiкiта"
+    existing = {p.name for p in s.query(Person).all()}
+    for name, color, pin in FLATMATES:
+        if name not in existing:
+            s.add(Person(name=name, color=color, pin_hash=set_pin(pin)))
+    s.commit()
+
 
 @click.command("init-db")
 @with_appcontext
 def init_db():
     """Create tables, seed the flatmates (idempotent)."""
     Base.metadata.create_all(get_engine())
-    s = SessionLocal()
-    if s.query(Person).count() == 0:
-        s.add_all([
-            Person(name="Сэм", color="#b07a5e", pin_hash=set_pin("111")),
-            Person(name="Люда", color="#6f88a4", pin_hash=set_pin("222")),
-            Person(name="Мiкiта", color="#7d9a72", pin_hash=set_pin("333")),
-            Person(name="Наташа", color="#a07a9a", pin_hash=set_pin("444")),
-        ])
-    else:
-        old = s.query(Person).filter_by(name="Микита").first()  # one-time rename on existing DBs
-        if old:
-            old.name = "Мiкiта"
-        # Natasha joined later: add her without touching existing records. Old expenses keep
-        # their original shares, so balances before her arrival are unchanged.
-        if not s.query(Person).filter_by(name="Наташа").first():
-            s.add(Person(name="Наташа", color="#a07a9a", pin_hash=set_pin("444")))
-    s.commit()
+    ensure_people(SessionLocal())
     click.echo("DB ready. PINs -> Sam:111  Luda:222  Mikita:333  Natasha:444")
